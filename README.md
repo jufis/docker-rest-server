@@ -34,9 +34,10 @@ List docker image:
 >docker images
 
 #Running the server in docker container
-Enter the following command to run the server container:
+Enter the following commands to run the server container:
 
 > docker rm -f docker-server
+
 > docker run --name docker-server docker-rest-server-container
 
 Explanation of the last command:
