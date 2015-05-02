@@ -43,6 +43,18 @@ List docker image:
 
 >docker images
 
+Assuming that you run your private docker-registry using the following cmd:
+
+>docker run -p 5000:5000 registry
+
+You can clean, package and deploy docker container to remote registry as follows:
+
+>mvn clean package docker:deploy
+
+NOTE: Seems that you need to prefix "tag" in conf.yml so that it allows connecting to localhost:5000 as follows:
+
+> localhost:5000/your_container_name
+
 #Running the server in docker container
 Enter the following commands to run the server container:
 
@@ -65,7 +77,7 @@ For more on linking containers see the following links:
 <br/>
 <a href=https://docs.oracle.com/cd/E52668_01/E54669/html/section_rsr_p2z_fp.html>https://docs.oracle.com/cd/E52668_01/E54669/html/section_rsr_p2z_fp.html</a>
 
-#Clean up all docker containers
+#Cleaning up all docker containers
 
 To reset docker from all processes/images run this:
 
