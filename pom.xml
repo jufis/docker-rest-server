@@ -61,12 +61,12 @@
 				</executions>
 			</plugin>
 			<!-- enable docker maven plugin -->
-			<plugin>
+			<plugin>	
 				<groupId>org.jolokia</groupId>
 				<artifactId>docker-maven-plugin</artifactId>
 				<version>0.11.3</version>
 				<configuration>
-					<dockerHost>http://localhost:2375</dockerHost>
+					<dockerHost>tcp://localhost:2375</dockerHost>
 					<useColor>true</useColor>
 					<verbose>true</verbose>
 					<registry>http://localhost:5000</registry>
@@ -76,9 +76,6 @@
 							<!-- if there is no . or : before / like here there is no registry 
 								defined, so registry tag in use now -->
 							<name>jufis/docker-rest-server:${git.buildnumber}</name>
-							<!-- our registry since name doesn't contain one, explicit use of 
-								registry in name overides this always -->
-							<registry>http://localhost:5000</registry>
 
 							<build>
 								<from>dockerfile/java:oracle-java7</from>
