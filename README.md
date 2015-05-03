@@ -1,9 +1,9 @@
 #Sample docker rest server
-This is a sample app inheriting from spring boot to create a REST service in order to be used from the docker-rest-client repository.
+This is a sample server app inheriting from spring boot to create a REST service in order to be used from the docker-rest-client repository.
 
-It uses the alexecollins [docker-maven-plugin](https://github.com/alexec/docker-maven-plugin "docker-maven-plugin") to create a docker image on package mvn target. 
+It uses the rhuss excelenet [docker-maven-plugin](https://github.com/rhuss/docker-maven-plugin "rhuss docker-maven-plugin") to build/start/stop/push/check logs a docker image. 
 
-It assumes a local docker-registry running on port 5000.
+It assumes you run a local docker-registry running on port 5000.
 
 When packaging using maven the docker container extracted is TAGed as follows:
 
@@ -14,7 +14,7 @@ where git.buildnumber corresponds to the following git evaluation:
 > tag + "_" + branch + "_" + shortRevision + "_" + commitsCount
 
 #Requirements
-You need to have docker install on your linux for this to run (https://docs.docker.com/installation/fedora/)
+You need to have docker installed on your linux for this to run (https://docs.docker.com/installation/fedora/)
 
 Quick setup
 
@@ -34,29 +34,91 @@ Quick setup
 
 >$ sudo usermod -a -G docker $USERNAME
 
-#Build
-Run the following cmd to build the server and the docker container all together:
+You need to have docker listening to a server socket:
 
-> mvn clean package
+>vi /etc/sysconfig/docker
 
-List docker image:
+and alter the OPTIONS var as follows:
 
->docker images
+OPTIONS='--selinux-enabled -H tcp://localhost:2375'
 
-Assuming that you run your private docker-registry using the following cmd:
+and restart docker:
+
+>systemctl stop docker
+
+>systemctl start docker
+
+and check that 2375 listens:
+
+>netstat -an |grep 2375
+
+and export docker host env var for your docker client cmds:
+
+>vi /etc/bashrc
+
+at the end put:
+
+>export DOCKER_HOST=tcp://localhost:2375 
+
+You need to have a docker registry running:
 
 >docker run -p 5000:5000 registry
 
-You can clean, package and deploy docker container to remote registry as follows:
+Finally:
 
->mvn clean package docker:deploy
+You need to have a jdk7 installed from oracle and set JAVA_HOME to the jdk location.
+You need to have maven installed and M2_HOME variable pointing to your maven installation.
+You need to have git installed on linux.
 
-NOTE: Seems that you need to prefix "tag" in conf.yml so that it allows connecting to localhost:5000 as follows:
+#General Usage Instructions
+First clone from github the project:
 
-> localhost:5000/your_container_name
+>git clone https://github.com/jufis/docker-rest-server.git
 
-#Running the server in docker container
-Enter the following commands to run the server container:
+>cd docker-rest-server
+
+Run the following cmd to clean the project:
+
+>mvn clean
+
+Run the following cmd to build the project:
+
+>mvn package
+
+Run the following cmd to build the project and build the docker container:
+
+>mvn package docker:build
+
+Check the the docker container image is ok locally:
+
+>docker images
+
+Run the following cmd to start the container:
+
+>mvn prepare-package docker:start
+
+Check that the docker container is started:
+
+>docker ps
+
+Run the following cmd to stop the container:
+
+>mvn prepare-package docker:stop
+
+Check that the docker container stopped:
+
+>docker ps
+
+Run the following cmd to push container to our local private docker registry:
+
+>mvn prepare-package docker:push
+
+Finally run the following cmd to tail logs from all your running containers:
+
+>mvn docker:logs -Ddocker.follow -Ddocker.logDate=DEFAULT -Ddocker.logAll=true
+
+#Running the server in docker container manually
+Enter the following commands to run the server container manually:
 
 > docker run -i -t --rm --name docker-server net.jufis/docker-rest-server:GIT_TAG
 
@@ -83,6 +145,6 @@ To reset docker from all processes/images run this:
 
 > docker stop $(docker ps -a -q)
 
->docker rm $(docker ps -a -q)
+>docker rm -f $(docker ps -a -q)
 
->docker rmi $(docker images -q)
+>docker rmi -f $(docker images -q)

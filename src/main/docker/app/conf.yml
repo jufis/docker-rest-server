@@ -1,6 +1,0 @@
-packaging:
-  add:
-    - target/${project.artifactId}-${project.version}-${git.buildnumber}.jar
-
-tag:
-    localhost:5000/${project.name}:${project.version}-${git.buildnumber}
