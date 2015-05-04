@@ -52,7 +52,7 @@
 						<phase>prepare-package</phase>
 						<configuration>
 							<javaScriptBuildnumberCallback>
-								((tag!=null &amp;&amp; tag.trim().length>0)?tag:"NOTAG") + "_" + branch + "_"
+								((tag!=null &amp;&amp; tag.trim().length>0)?tag:"NOTAG") + "_" + branch
 							</javaScriptBuildnumberCallback>
 						</configuration>
 					</execution>
