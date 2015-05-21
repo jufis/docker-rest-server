@@ -1,11 +1,11 @@
 #Sample docker rest server
 This is a sample server app inheriting from spring boot to create a REST service in order to be used from the docker-rest-client repository.
 
-It uses the rhuss excelenet [docker-maven-plugin](https://github.com/rhuss/docker-maven-plugin "rhuss docker-maven-plugin") to build/start/stop/push/check logs a docker image. 
+It uses the rhuss excellent [docker-maven-plugin](https://github.com/rhuss/docker-maven-plugin "rhuss docker-maven-plugin") to build/start/stop/push/check logs of a docker image. 
 
 It assumes you run a local private docker-registry running on port 443 over SSL wihout basic auth.
 
-When packaging using maven the docker container extracted is TAGed as follows:
+When packaging using maven *ci or prod* profiles the docker container extracted is TAGed as follows:
 
 > ${project.artifactId}-${project.version}-${git.buildnumber}
 
@@ -13,54 +13,21 @@ where git.buildnumber corresponds to the following git evaluation:
 
 > tag + "_" + branch
 
-#Requirements
-You need to have docker installed on your linux for this to run (https://docs.docker.com/installation/fedora/)
 
-Quick setup
+##Requirements
+Here we have configured our pom to depend on a secured docker client to "talk" to a secure docker daemon which in turn "talks" to a private docker registry in order push our docker images with maven.
 
->$ sudo yum -y remove docker
+If you have not setup docker follow this link:
 
->$ sudo yum -y install docker-io
+>https://github.com/jufis/docker/blob/master/docs/docker-installation.md
 
->$ sudo yum -y update docker-io
+If you have not configure secure docker daemon follow this link:
 
->$ sudo systemctl start docker
+>https://github.com/jufis/docker/blob/master/docs/docker-security.md
 
->$ sudo systemctl enable docker
+If you have not setup a private docker registry follow this link:
 
->$ sudo groupadd docker
-
->$ sudo chown root:docker /var/run/docker.sock
-
->$ sudo usermod -a -G docker $USERNAME
-
-You need to have docker listening to a server socket:
-
->vi /etc/sysconfig/docker
-
-and alter the OPTIONS var as follows:
-
-OPTIONS='--selinux-enabled -H tcp://localhost:2375'
-
-and restart docker:
-
->systemctl stop docker
-
->systemctl start docker
-
-and check that 2375 listens:
-
->netstat -an |grep 2375
-
-and export docker host env var for your docker client cmds:
-
->vi /etc/bashrc
-
-at the end put:
-
->export DOCKER_HOST=tcp://localhost:2375 
-
-You need to have a docker registry running, [check here for more.](REGISTRY.md)
+>https://github.com/jufis/docker/blob/master/docs/docker-registry.md
 
 Finally:
 
@@ -68,26 +35,103 @@ You need to have a jdk7 installed from oracle and set JAVA_HOME to the jdk locat
 
 You need to have maven installed and M2_HOME variable pointing to your maven installation.
 
-You need to have git installed on linux.
+You need to have git installed on your linux.
 
-#General Usage Instructions
+
+##Profiles
+
+This pom uses profile to seperate for the following environments:
+
+1. dev  = local development environment
+2. ci   = continous integration
+3. prod = production live environment
+
+The *dev* profile is enabled by default. That causes the docker image to be created as follows in the docker-registry:
+
+>registry.jufis.net:443/USERNAME-dev/docker-rest-server:latest
+
+That will allow the developer to use his own repository eg. jufis-dev inside the docker registry and not conflict his changes amongst other developers working on the same docker-registry on different features of the same image.
+
+The *ci* profile can be enabled as follows:
+
+>mvn ... -P ci
+
+or
+
+>mvn -Denvironment=ci ...
+
+The *ci* profile guarantees that the docker image created is using GIT_TAG information so that the docker image gets created in the *ci* repository with the following format:
+
+>registry.jufis.net:443/ci/docker-rest-server:GIT_TAG
+
+<pre>
+ATTENTION: if GIT nature is not found or GIT tag not exists package phase will fail on purpose with a characteristic msg.
+
+If you create a TAG from master this tag will be used for building the image.
+If after TAG creation on master you change a single file this TAG not exists anymore and the build will fail.
+</pre>
+
+The *prod* profile can be enabled as follows:
+
+>mvn ... -P prod
+
+or
+
+>mvn -Denvironment=prod ...
+
+The *prod* profile guarantees that the docker image created is using GIT_TAG information so that the docker image to be created in the *prod* repository as follows:
+
+>registry.jufis.net:443/prod/docker-rest-server:GIT_TAG
+
+<pre>
+ATTENTION: if GIT nature is not found or GIT tag not exists package phase will fail on purpose with a characteristic msg.
+
+If you create a TAG from master this tag will be used for building the image.
+If after TAG creation on master you change a single file this TAG not exists anymore and the build will fail.
+</pre>
+
+
+##General Usage Instructions
+
 First clone from github the project:
 
 >git clone https://github.com/jufis/docker-rest-server.git
 
 >cd docker-rest-server
 
-Run the following cmd to clean the project:
+Run the following cmd to clean-up the project:
 
 >mvn clean
 
-Run the following cmd to build the project:
+<pre>
+NOTE: this phase also calls docker:remove with -Ddocker.removeAll in order to remove any pre-built docker image.
 
+In cases that you have local dev/ci/prod mixture of images clean doesn't remove image due to dependencies; look at the very bottom of this readme in order to flush all docker images.
+</pre>
+
+Run the following cmd to complile the project:
+
+>mvn compile
+
+<pre>
+NOTE: this phase doesn't build the docker image.
+</pre>
+
+Run the following cmd to build the project:
+ 
 >mvn package
 
-Run the following cmd to build the project and build the docker container:
+<pre>
+NOTE: this phase also calls docker:build in order to build the docker image.
+</pre>
 
->mvn package docker:build
+Run the following cmd to deploy:
+
+>mvn deploy
+
+<pre>
+NOTE: this phase also calls docker:push in order to push the image to the private docker registry automatically.
+</pre>
 
 Check the the docker container image is ok locally:
 
@@ -101,27 +145,16 @@ Check that the docker container is started:
 
 >docker ps
 
-Run the following cmd to stop the container:
-
->mvn prepare-package docker:stop
-
-Check that the docker container stopped:
-
->docker ps
-
-Run the following cmd to push container to our local private docker registry:
-
->mvn prepare-package docker:push
-
 Run the following cmd to tail logs from all your running containers:
 
 >mvn docker:logs -Ddocker.follow -Ddocker.logDate=DEFAULT -Ddocker.logAll=true
 
-Finally run the following cmd to remove the image:
+Run the following cmd to stop the container:
 
->mvn prepare-package docker:remove
+>mvn prepare-package docker:stop
 
-#Running the server in docker container manually
+
+##Running the server in docker container manually
 Enter the following commands to run the server container manually:
 
 > docker run -i -t --rm --name docker-server net.jufis/docker-rest-server:GIT_TAG
@@ -143,11 +176,12 @@ For more on linking containers see the following links:
 <br/>
 <a href=https://docs.oracle.com/cd/E52668_01/E54669/html/section_rsr_p2z_fp.html>https://docs.oracle.com/cd/E52668_01/E54669/html/section_rsr_p2z_fp.html</a>
 
-#Cleaning up all docker containers
+
+##Cleaning up all docker containers
 
 To reset docker from all processes/images run this:
 
-> docker stop $(docker ps -a -q)
+>docker stop $(docker ps -a -q)
 
 >docker rm -f $(docker ps -a -q)
 
