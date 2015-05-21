@@ -30,12 +30,8 @@
 		<docker.persistent.volume>/tmp</docker.persistent.volume>
 		<maven.enforcer.version>1.4</maven.enforcer.version>
 		<docker.java.image.version>java:7</docker.java.image.version>
-		<no.git.or.tag.bsh.expression>new
-			java.io.File("${basedir}/.git").exists() &amp;&amp;
-			!"${git.tag}".equals("")</no.git.or.tag.bsh.expression>
-		<no.git.or.tag.found.msg>[OOPS]: !!!!!!!!!! NO GIT NATURE FOUND or TAG
-			NOT EXISTS...PLEASE PULL **HARD** FROM GIT or **CREATE** TAG FIRST
-			!!!!!!!!!!</no.git.or.tag.found.msg>
+		<no.git.or.tag.bsh.expression>new java.io.File("${basedir}/.git").exists() &amp;&amp; !"${git.tag}".equals("")</no.git.or.tag.bsh.expression>
+		<no.git.or.tag.found.msg>[OOPS]: !!!!!!!!!! NO GIT NATURE FOUND or TAG NOT EXISTS...PLEASE PULL **HARD** FROM GIT or **CREATE** TAG FIRST !!!!!!!!!!</no.git.or.tag.found.msg>
 	</properties>
 
 	<dependencies>
